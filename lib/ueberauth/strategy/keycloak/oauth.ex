@@ -15,7 +15,6 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     site: "http://localhost:8080",
     authorize_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/auth",
     token_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token",
-    api_version: "v4",
     token_method: :post
   ]
 

@@ -73,7 +73,8 @@ defmodule Ueberauth.Strategy.Keycloak do
   use Ueberauth.Strategy,
     uid_field: :id,
     default_scope: "api read_user read_registry",
-    oauth2_module: Ueberauth.Strategy.Keycloak.OAuth
+    oauth2_module: Ueberauth.Strategy.Keycloak.OAuth,
+    userinfo_url: "/auth/realms/master/protocol/openid-connect/userinfo"
 
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth.Credentials
@@ -195,10 +196,7 @@ defmodule Ueberauth.Strategy.Keycloak do
     conn = put_private(conn, :keycloak_token, token)
     api_ver = option(conn, :api_ver) || "v4"
 
-    case Ueberauth.Strategy.Keycloak.OAuth.get(
-           token,
-           "/auth/realms/master/protocol/openid-connect/userinfo"
-         ) do
+    case Ueberauth.Strategy.Keycloak.OAuth.get(token, option(conn, :userinfo_url)) do
       {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
         set_errors!(conn, [error("token", "unauthorized")])
 

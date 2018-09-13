@@ -1,11 +1,7 @@
-# v0.2.0 - 2018-03-14
+# v0.1.1 - 2018-09-13
 
-- Set app correctly to `ueberauth_gitlab_strategy`
+- Add a `userinfo_url` config option to allow other realms than master
 
-# v0.1.1 - 2018-03-13
-
-- Dependency updates
-
-# v0.1.0 - 2017-11-06
+# v0.1.0 - 2018-09-12
 
 - Initial release
