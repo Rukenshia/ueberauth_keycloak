@@ -15,6 +15,7 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     site: "http://localhost:8080",
     authorize_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/auth",
     token_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token",
+    userinfo_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/userinfo",
     token_method: :post
   ]
 
@@ -29,18 +30,24 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
   These options are only useful for usage outside the normal callback phase of Ueberauth.
   """
   def client(opts \\ []) do
-    config =
-      :ueberauth
-      |> Application.fetch_env!(Ueberauth.Strategy.Keycloak.OAuth)
-      |> check_config_key_exists(:client_id)
-      |> check_config_key_exists(:client_secret)
-
     client_opts =
       @defaults
-      |> Keyword.merge(config)
+      |> Keyword.merge(config())
       |> Keyword.merge(opts)
 
     OAuth2.Client.new(client_opts)
+  end
+
+  @doc """
+  Fetches configuration for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`
+
+  Also checks if at least `client_id` and `client_secret` are set, raising an error if not.
+  """
+  defp config() do
+    :ueberauth
+    |> Application.fetch_env!(Ueberauth.Strategy.Keycloak.OAuth)
+    |> check_config_key_exists(:client_id)
+    |> check_config_key_exists(:client_secret)
   end
 
   @doc """
@@ -50,6 +57,15 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     opts
     |> client
     |> OAuth2.Client.authorize_url!(params)
+  end
+
+  @doc """
+  Fetches `userinfo_url` for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`.
+  It will be used to get user profile information after an successful authentication.
+  """
+  def userinfo_url() do
+    config()
+    |> Keyword.get(:userinfo_url)
   end
 
   def get(token, url, headers \\ [], opts \\ []) do

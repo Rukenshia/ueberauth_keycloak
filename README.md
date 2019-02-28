@@ -12,7 +12,7 @@ This repository is based on the work of [mtchavez/ueberauth_keycloak](https://gi
 
     ```elixir
     def deps do
-      [{:ueberauth_keycloak_strategy, "~> 0.1"}]
+      [{:ueberauth_keycloak_strategy, "~> 0.2"}]
     end
     ```
 
