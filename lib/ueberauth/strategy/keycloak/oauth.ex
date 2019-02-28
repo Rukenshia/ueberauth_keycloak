@@ -38,6 +38,11 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     OAuth2.Client.new(client_opts)
   end
 
+  @doc """
+  Fetches configuration for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`
+
+  Also checks if at least `client_id` and `client_secret` are set, raising an error if not.
+  """
   defp config() do
     :ueberauth
     |> Application.fetch_env!(Ueberauth.Strategy.Keycloak.OAuth)
@@ -54,6 +59,10 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     |> OAuth2.Client.authorize_url!(params)
   end
 
+  @doc """
+  Fetches `userinfo_url` for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`.
+  It will be used to get user profile information after an successful authentication.
+  """
   def userinfo_url() do
     config()
     |> Keyword.get(:userinfo_url)
