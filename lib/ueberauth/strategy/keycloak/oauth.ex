@@ -13,9 +13,12 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
   @defaults [
     strategy: __MODULE__,
     site: "http://localhost:8080",
-    authorize_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/auth",
-    token_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token",
-    userinfo_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/userinfo",
+    authorize_url: "http://localhost:8080/auth/realms/LMS/protocol/openid-connect/auth",
+    token_url: "http://localhost:8080/auth/realms/LMS/protocol/openid-connect/token",
+    userinfo_url: "http://localhost:8080/auth/realms/LMS/protocol/openid-connect/userinfo",
+    introspect_url:
+      "http://localhost:8080/auth/realms/LMS/protocol/openid-connect/token/introspect",
+    logout_url: "http://localhost:8080/auth/realms/LMS/protocol/openid-connect/logout",
     token_method: :post
   ]
 
@@ -64,8 +67,7 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
   It will be used to get user profile information after an successful authentication.
   """
   def userinfo_url() do
-    config()
-    |> Keyword.get(:userinfo_url)
+    config() |> Keyword.get(:userinfo_url)
   end
 
   def get(token, url, headers \\ [], opts \\ []) do
@@ -84,7 +86,6 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
   end
 
   # Strategy Callbacks
-
   def authorize_url(client, params) do
     client
     |> put_param("response_type", "code")
@@ -102,6 +103,30 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     |> put_header("Accept", "application/json")
     |> OAuth2.Strategy.AuthCode.get_token(params, headers)
   end
+
+  def introspect_url(),
+    do: config() |> Keyword.get(:introspect_url)
+
+  def logout_url(), do: config() |> Keyword.get(:logout_url)
+
+  def request_post(url, params \\ [], headers \\ []) do
+    client = client()
+
+    body =
+      [
+        client_id: client.client_id,
+        client_secret: client.client_secret
+      ] ++ params
+
+    client
+    |> put_header("content-type", "application/x-www-form-urlencoded")
+    |> put_header("accept", "application/json")
+    |> OAuth2.Client.post(url, body, headers)
+  end
+
+  def introspect(access_token), do: request_post(introspect_url(), token: access_token)
+
+  def logout(refresh_token), do: request_post(logout_url(), refresh_token: refresh_token)
 
   defp check_config_key_exists(config, key) when is_list(config) do
     unless Keyword.has_key?(config, key) do

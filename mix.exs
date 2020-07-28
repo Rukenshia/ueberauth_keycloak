@@ -8,13 +8,13 @@ defmodule UeberauthKeycloak.Mixfile do
       app: :ueberauth_keycloak_strategy,
       version: @version,
       package: package(),
-      elixir: "~> 1.3",
+      deps: deps(),
+      elixir: "~> 1.8",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       source_url: "https://github.com/Rukenshia/ueberauth_keycloak",
       homepage_url: "https://github.com/Rukenshia/ueberauth_keycloak",
       description: description(),
-      deps: deps(),
       docs: docs()
     ]
   end
@@ -30,20 +30,20 @@ defmodule UeberauthKeycloak.Mixfile do
   defp deps do
     [
       {:oauth2, "~> 0.9"},
-      {:ueberauth, "~> 0.4"},
+      {:ueberauth, "~> 0.6.3"},
 
       # dev/test only dependencies
-      {:credo, "~> 0.8", only: [:dev, :test]},
-      {:exvcr, "~> 0.10.0", only: [:test]},
+      {:credo, "~> 1.4.0", only: [:dev, :test]},
+      {:exvcr, "~> 0.11.0", only: [:test]},
 
       # docs dependencies
-      {:earmark, ">= 0.0.0", only: :dev},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:earmark, ">= 1.4.4", only: :dev},
+      {:ex_doc, ">= 0.22.1", only: :dev}
     ]
   end
 
   defp docs do
-    [extras: ["README.md"]]
+    [main: "uebereauth_Keycloak", extras: ["README.md"]]
   end
 
   defp description do
