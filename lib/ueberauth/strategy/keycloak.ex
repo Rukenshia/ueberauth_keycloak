@@ -236,6 +236,17 @@ defmodule Ueberauth.Strategy.Keycloak do
     end
   end
 
+  def auth_user(username, password) do
+    case OAuth.auth_token(OAuth.token_url(), username, password) do
+      {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
+        {:error, :unauthorized}
+
+      {:ok, %OAuth2.Response{status_code: status_code, body: user}}
+      when status_code in 200..399 ->
+        {:ok, user}
+    end
+  end
+
   def logout(conn, token) do
     OAuth.logout(token)
   end

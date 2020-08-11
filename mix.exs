@@ -5,7 +5,7 @@ defmodule UeberauthKeycloak.Mixfile do
 
   def project do
     [
-      app: :ueberauth_keycloak_strategy,
+      app: :ueberauth_keycloak,
       version: @version,
       package: package(),
       deps: deps(),

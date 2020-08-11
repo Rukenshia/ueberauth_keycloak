@@ -104,10 +104,22 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     |> OAuth2.Strategy.AuthCode.get_token(params, headers)
   end
 
+  def auth_token(url, username, password) do
+    params = [
+      username: username,
+      password: password,
+      grant_type: "password"
+    ]
+
+    request_post(url, params)
+  end
+
   def introspect_url(),
     do: config() |> Keyword.get(:introspect_url)
 
   def logout_url(), do: config() |> Keyword.get(:logout_url)
+
+  def token_url(), do: config() |> Keyword.get(:token_url)
 
   def request_post(url, params \\ [], headers \\ []) do
     client = client()
