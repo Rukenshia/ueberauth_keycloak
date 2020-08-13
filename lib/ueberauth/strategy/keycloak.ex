@@ -68,179 +68,185 @@ defmodule Ueberauth.Strategy.Keycloak do
 
   Default is "api read_user read_registry"
   """
-  require Logger
 
-  use Ueberauth.Strategy,
-    uid_field: :id,
-    default_scope: "api read_user read_registry",
-    oauth2_module: Ueberauth.Strategy.Keycloak.OAuth
+  defmacro __using__(opts) do
+    quote bind_quoted: [opts: opts] do
+      @oauth_module Keyword.fetch!(opts, :oauth2_module)
 
-  alias Ueberauth.Auth.Info
-  alias Ueberauth.Auth.Credentials
-  alias Ueberauth.Auth.Extra
-  alias Ueberauth.Strategy.Keycloak.OAuth
+      require Logger
 
-  @doc """
-  Handles the initial redirect to the keycloak authentication page.
+      use Ueberauth.Strategy,
+        uid_field: :id,
+        default_scope: "api read_user read_registry",
+        oauth2_module: @oauth_module
 
-  To customize the scope (permissions) that are requested by keycloak include them as part of your url:
+      alias Ueberauth.Auth.Credentials
+      alias Ueberauth.Auth.Extra
+      alias Ueberauth.Auth.Info
 
-      "/auth/keycloak?scope=api read_user read_registry"
+      @doc """
+      Handles the initial redirect to the keycloak authentication page.
 
-  You can also include a `state` param that keycloak will return to you.
-  """
-  def handle_request!(conn) do
-    scopes = conn.params["scope"] || option(conn, :default_scope)
-    opts = [redirect_uri: callback_url(conn), scope: scopes]
+      To customize the scope (permissions) that are requested by keycloak include them as part of your url:
 
-    opts =
-      if conn.params["state"], do: Keyword.put(opts, :state, conn.params["state"]), else: opts
+          "/auth/keycloak?scope=api read_user read_registry"
 
-    module = option(conn, :oauth2_module)
-    redirect!(conn, apply(module, :authorize_url!, [opts]))
-  end
+      You can also include a `state` param that keycloak will return to you.
+      """
+      def handle_request!(conn) do
+        scopes = conn.params["scope"] || option(conn, :default_scope)
+        opts = [redirect_uri: callback_url(conn), scope: scopes]
 
-  @doc """
-  Handles the callback from Keycloak. When there is a failure from Keycloak the failure is included in the
-  `ueberauth_failure` struct. Otherwise the information returned from Keycloak is returned in the `Ueberauth.Auth` struct.
-  """
-  def handle_callback!(%Plug.Conn{params: %{"code" => code}} = conn) do
-    module = option(conn, :oauth2_module)
+        opts =
+          if conn.params["state"], do: Keyword.put(opts, :state, conn.params["state"]), else: opts
 
-    token = apply(module, :get_token!, [[code: code, redirect_uri: callback_url(conn)]])
+        module = option(conn, :oauth2_module)
+        redirect!(conn, apply(module, :authorize_url!, [opts]))
+      end
 
-    if token.access_token == nil do
-      set_errors!(conn, [
-        error(token.other_params["error"], token.other_params["error_description"])
-      ])
-    else
-      fetch_user(conn, token)
-    end
-  end
+      @doc """
+      Handles the callback from Keycloak. When there is a failure from Keycloak the failure is included in the
+      `ueberauth_failure` struct. Otherwise the information returned from Keycloak is returned in the `Ueberauth.Auth` struct.
+      """
+      def handle_callback!(%Plug.Conn{params: %{"code" => code}} = conn) do
+        module = option(conn, :oauth2_module)
 
-  @doc false
-  def handle_callback!(conn) do
-    set_errors!(conn, [error("missing_code", "No code received")])
-  end
+        token = apply(module, :get_token!, [[code: code, redirect_uri: callback_url(conn)]])
 
-  @doc """
-  Cleans up the private area of the connection used for passing the raw Keycloak response around during the callback.
-  """
-  def handle_cleanup!(conn) do
-    conn
-    |> put_private(:keycloak_user, nil)
-  end
-
-  @doc """
-  Fetches the uid field from the Keycloak response. This defaults to the option `uid_field` which in-turn defaults to `id`
-  """
-  def uid(conn) do
-    user =
-      conn
-      |> option(:uid_field)
-      |> to_string
-
-    conn.private.keycloak_user[user]
-  end
-
-  @doc """
-  Includes the credentials from the Keycloak response.
-  """
-  def credentials(conn) do
-    token = conn.private.keycloak_token
-    scope_string = token.other_params["scope"] || ""
-    scopes = String.split(scope_string, ",")
-
-    %Credentials{
-      token: token.access_token,
-      refresh_token: token.refresh_token,
-      expires_at: token.expires_at,
-      token_type: token.token_type,
-      expires: !!token.expires_at,
-      scopes: scopes
-    }
-  end
-
-  @doc """
-  Fetches the fields to populate the info section of the `Ueberauth.Auth` struct.
-  """
-  def info(conn) do
-    user = conn.private.keycloak_user
-
-    %Info{
-      name: user["name"],
-      nickname: user["preferred_username"],
-      email: user["email"],
-      location: user["location"],
-      image: user["avatar_url"],
-      urls: %{
-        web_url: user["web_url"],
-        website_url: user["website_url"]
-      }
-    }
-  end
-
-  @doc """
-  Stores the raw information (including the token) obtained from the Keycloak callback.
-  """
-  def extra(conn) do
-    %Extra{
-      raw_info: %{
-        token: conn.private.keycloak_token,
-        user: conn.private.keycloak_user
-      }
-    }
-  end
-
-  def validate_token(plug, nil), do: {:error, nil}
-
-  def validate_token(conn, token) do
-    introspect_token(conn, token)
-  end
-
-  defp introspect_token(conn, token) do
-    case OAuth.introspect(token) do
-      {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
-        set_errors!(conn, [error("token", "unauthorized")])
-
-      {:ok, %OAuth2.Response{status_code: status_code, body: %{"active" => active} = user}}
-      when status_code in 200..399 ->
-        if active do
-          {:ok, user}
+        if token.access_token == nil do
+          set_errors!(conn, [
+            error(token.other_params["error"], token.other_params["error_description"])
+          ])
         else
-          set_errors!(conn, [error("token", "unauthorized")])
+          fetch_user(conn, token)
         end
+      end
 
-      {:error, %OAuth2.Error{reason: reason}} ->
-        set_errors!(conn, [error("OAuth2", reason)])
+      @doc false
+      def handle_callback!(conn) do
+        set_errors!(conn, [error("missing_code", "No code received")])
+      end
+
+      @doc """
+      Cleans up the private area of the connection used for passing the raw Keycloak response around during the callback.
+      """
+      def handle_cleanup!(conn) do
+        conn
+        |> put_private(:keycloak_user, nil)
+      end
+
+      @doc """
+      Fetches the uid field from the Keycloak response. This defaults to the option `uid_field` which in-turn defaults to `id`
+      """
+      def uid(conn) do
+        user =
+          conn
+          |> option(:uid_field)
+          |> to_string
+
+        conn.private.keycloak_user[user]
+      end
+
+      @doc """
+      Includes the credentials from the Keycloak response.
+      """
+      def credentials(conn) do
+        token = conn.private.keycloak_token
+        scope_string = token.other_params["scope"] || ""
+        scopes = String.split(scope_string, ",")
+
+        %Credentials{
+          token: token.access_token,
+          refresh_token: token.refresh_token,
+          expires_at: token.expires_at,
+          token_type: token.token_type,
+          expires: !!token.expires_at,
+          scopes: scopes
+        }
+      end
+
+      @doc """
+      Fetches the fields to populate the info section of the `Ueberauth.Auth` struct.
+      """
+      def info(conn) do
+        user = conn.private.keycloak_user
+
+        %Info{
+          name: user["name"],
+          nickname: user["preferred_username"],
+          email: user["email"],
+          location: user["location"],
+          image: user["avatar_url"],
+          urls: %{
+            web_url: user["web_url"],
+            website_url: user["website_url"]
+          }
+        }
+      end
+
+      @doc """
+      Stores the raw information (including the token) obtained from the Keycloak callback.
+      """
+      def extra(conn) do
+        %Extra{
+          raw_info: %{
+            token: conn.private.keycloak_token,
+            user: conn.private.keycloak_user
+          }
+        }
+      end
+
+      def validate_token(_plug, nil), do: {:error, nil}
+
+      def validate_token(conn, token) do
+        introspect_token(conn, token)
+      end
+
+      defp introspect_token(conn, token) do
+        case @oauth_module.introspect(token) do
+          {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
+            set_errors!(conn, [error("token", "unauthorized")])
+
+          {:ok, %OAuth2.Response{status_code: status_code, body: %{"active" => active} = user}}
+          when status_code in 200..399 ->
+            if active do
+              {:ok, user}
+            else
+              set_errors!(conn, [error("token", "unauthorized")])
+            end
+
+          {:error, %OAuth2.Error{reason: reason}} ->
+            set_errors!(conn, [error("OAuth2", reason)])
+        end
+      end
+
+      defp fetch_user(conn, token) do
+        conn = put_private(conn, :keycloak_token, token)
+        api_ver = option(conn, :api_ver) || "v4"
+
+        case @oauth_module.get(
+               token,
+               @oauth_module.userinfo_url()
+             ) do
+          {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
+            set_errors!(conn, [error("token", "unauthorized")])
+
+          {:ok, %OAuth2.Response{status_code: status_code, body: user}}
+          when status_code in 200..399 ->
+            put_private(conn, :keycloak_user, user)
+
+          {:error, %OAuth2.Error{reason: reason}} ->
+            set_errors!(conn, [error("OAuth2", reason)])
+        end
+      end
+
+      def logout(_conn, token) do
+        @oauth_module.logout(token)
+      end
+
+      defp option(conn, key) do
+        Keyword.get(options(conn) || [], key, Keyword.get(default_options(), key))
+      end
     end
-  end
-
-  defp fetch_user(conn, token) do
-    conn = put_private(conn, :keycloak_token, token)
-    api_ver = option(conn, :api_ver) || "v4"
-
-    case OAuth.get(
-           token,
-           OAuth.userinfo_url()
-         ) do
-      {:ok, %OAuth2.Response{status_code: 401, body: _body}} ->
-        set_errors!(conn, [error("token", "unauthorized")])
-
-      {:ok, %OAuth2.Response{status_code: status_code, body: user}}
-      when status_code in 200..399 ->
-        put_private(conn, :keycloak_user, user)
-
-      {:error, %OAuth2.Error{reason: reason}} ->
-        set_errors!(conn, [error("OAuth2", reason)])
-    end
-  end
-
-  def logout(conn, token) do
-    OAuth.logout(token)
-  end
-
-  defp option(conn, key) do
-    Keyword.get(options(conn) || [], key, Keyword.get(default_options(), key))
   end
 end
