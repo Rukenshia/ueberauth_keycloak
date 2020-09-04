@@ -132,6 +132,17 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
 
       def logout(refresh_token), do: request_post(logout_url(), refresh_token: refresh_token)
 
+      def token_url, do: config() |> Keyword.get(:token_url)
+
+      def refresh_token(refresh_token) do
+        params = [
+          grant_type: "refresh_token",
+          refresh_token: refresh_token
+        ]
+
+        request_post(token_url(), params)
+      end
+
       defp check_config_key_exists(config, key) when is_list(config) do
         unless Keyword.has_key?(config, key) do
           raise "#{inspect(key)} missing from config :ueberauth, Ueberauth.Strategy.Keycloak"

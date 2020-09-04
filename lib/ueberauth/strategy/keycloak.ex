@@ -199,7 +199,13 @@ defmodule Ueberauth.Strategy.Keycloak do
       def validate_token(_plug, nil), do: {:error, nil}
 
       def validate_token(conn, token) do
-        introspect_token(conn, token)
+        case introspect_token(conn, token) do
+          {:ok, _} = response ->
+            response
+
+          {:error, _} = error ->
+            error
+        end
       end
 
       defp introspect_token(conn, token) do
@@ -212,7 +218,7 @@ defmodule Ueberauth.Strategy.Keycloak do
             if active do
               {:ok, user}
             else
-              set_errors!(conn, [error("token", "unauthorized")])
+              {:error, set_errors!(conn, [error("token", "unauthorized")])}
             end
 
           {:error, %OAuth2.Error{reason: reason}} ->
@@ -237,6 +243,21 @@ defmodule Ueberauth.Strategy.Keycloak do
 
           {:error, %OAuth2.Error{reason: reason}} ->
             set_errors!(conn, [error("OAuth2", reason)])
+        end
+      end
+
+      def refresh_token(conn, refresh_token) do
+        case @oauth_module.refresh_token(refresh_token) do
+          {:error, %OAuth2.Response{body: %{"error_description" => error}, status_code: 400}} ->
+            {:error, set_errors!(conn, [error("token", error)])}
+
+          {:ok,
+           %OAuth2.Response{
+             status_code: status_code,
+             body: body
+           }}
+          when status_code in 200..399 ->
+            {:ok, body}
         end
       end
 
