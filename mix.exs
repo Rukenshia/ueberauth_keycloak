@@ -29,12 +29,8 @@ defmodule UeberauthKeycloak.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:oauth2, "~> 0.9"},
-      {:ueberauth, "~> 0.4"},
-
-      # dev/test only dependencies
-      {:credo, "~> 0.8", only: [:dev, :test]},
-      {:exvcr, "~> 0.10.0", only: [:test]},
+      {:oauth2, "~> 2.0"},
+      {:ueberauth, "~> 0.7"},
 
       # docs dependencies
       {:earmark, ">= 0.0.0", only: :dev},
