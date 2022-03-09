@@ -33,8 +33,7 @@ defmodule UeberauthKeycloak.Mixfile do
       {:ueberauth, "~> 0.7"},
 
       # docs dependencies
-      {:earmark, ">= 0.0.0", only: :dev},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 
