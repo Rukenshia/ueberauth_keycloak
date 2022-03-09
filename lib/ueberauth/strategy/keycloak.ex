@@ -78,6 +78,7 @@ defmodule Ueberauth.Strategy.Keycloak do
   alias Ueberauth.Auth.Info
   alias Ueberauth.Auth.Credentials
   alias Ueberauth.Auth.Extra
+  alias Ueberauth.Strategy.Helpers
 
   @doc """
   Handles the initial redirect to the keycloak authentication page.
@@ -86,14 +87,13 @@ defmodule Ueberauth.Strategy.Keycloak do
 
       "/auth/keycloak?scope=api read_user read_registry"
 
-  You can also include a `state` param that keycloak will return to you.
+  The request will include the state parameter that was set by ueberauth (if available)
   """
   def handle_request!(conn) do
     scopes = conn.params["scope"] || option(conn, :default_scope)
     opts = [redirect_uri: callback_url(conn), scope: scopes]
 
-    opts =
-      if conn.params["state"], do: Keyword.put(opts, :state, conn.params["state"]), else: opts
+    opts = Helpers.with_state_param(opts, conn)
 
     module = option(conn, :oauth2_module)
     redirect!(conn, apply(module, :authorize_url!, [opts]))
@@ -205,6 +205,9 @@ defmodule Ueberauth.Strategy.Keycloak do
       {:ok, %OAuth2.Response{status_code: status_code, body: user}}
       when status_code in 200..399 ->
         put_private(conn, :keycloak_user, user)
+
+      {:error, %OAuth2.Response{body: body}} ->
+        set_errors!(conn, [error("OAuth2", body)])
 
       {:error, %OAuth2.Error{reason: reason}} ->
         set_errors!(conn, [error("OAuth2", reason)])
