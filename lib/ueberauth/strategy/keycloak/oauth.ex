@@ -39,11 +39,8 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
     OAuth2.Client.new(client_opts)
   end
 
-  @doc """
-  Fetches configuration for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`
-
-  Also checks if at least `client_id` and `client_secret` are set, raising an error if not.
-  """
+  # Fetches configuration for `Ueberauth.Strategy.Keycloak.OAuth` Strategy from `config.exs`
+  # Also checks if at least `client_id` and `client_secret` are set, raising an error if not.
   defp config() do
     :ueberauth
     |> Application.fetch_env!(Ueberauth.Strategy.Keycloak.OAuth)

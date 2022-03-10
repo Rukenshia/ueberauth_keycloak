@@ -193,7 +193,6 @@ defmodule Ueberauth.Strategy.Keycloak do
 
   defp fetch_user(conn, token) do
     conn = put_private(conn, :keycloak_token, token)
-    api_ver = option(conn, :api_ver) || "v4"
 
     case Ueberauth.Strategy.Keycloak.OAuth.get(
            token,
