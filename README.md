@@ -41,7 +41,7 @@ This repository is based on the work of [mtchavez/ueberauth_keycloak](https://gi
       client_secret: System.get_env("KEYCLOAK_CLIENT_SECRET"),
       redirect_uri: System.get_env("KEYCLOAK_REDIRECT_URI")
     ```
-1.  Optionally configure the endpoint URL's so they reflect the correct host and realm
+1.  Optionally configure the endpoint URL's so they reflect the correct host and realm:
 
     ```elixir
     config :ueberauth, Ueberauth.Strategy.Keycloak.OAuth,
