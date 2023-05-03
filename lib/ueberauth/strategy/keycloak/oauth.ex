@@ -13,9 +13,9 @@ defmodule Ueberauth.Strategy.Keycloak.OAuth do
   @defaults [
     strategy: __MODULE__,
     site: "http://localhost:8080",
-    authorize_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/auth",
-    token_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/token",
-    userinfo_url: "http://localhost:8080/auth/realms/master/protocol/openid-connect/userinfo",
+    authorize_url: "http://localhost:8080/realms/master/protocol/openid-connect/auth",
+    token_url: "http://localhost:8080/realms/master/protocol/openid-connect/token",
+    userinfo_url: "http://localhost:8080/realms/master/protocol/openid-connect/userinfo",
     token_method: :post,
     serializers: %{"application/json" => Jason}
   ]
