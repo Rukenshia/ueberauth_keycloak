@@ -79,7 +79,7 @@ This repository is based on the work of [mtchavez/ueberauth_keycloak](https://gi
 
 1. You controller needs to implement callbacks to deal with `Ueberauth.Auth` and `Ueberauth.Failure` responses.
 
-For an example implementation see the [Hello Keycloak](https://github.com/csokun/hello_keycloak) or [Überauth Example][example-app] application
+For an example implementation see [Hello Keycloak](https://github.com/csokun/hello_keycloak) or the [Überauth Example][example-app] application
 on how to integrate other strategies. Adding Keycloak should be similar to Github.
 
 ## Calling
